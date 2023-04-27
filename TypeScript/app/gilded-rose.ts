@@ -15,30 +15,31 @@ abstract class UpdatableProduct extends Item {
     super(name, sellIn, quality)
   }
 
-  abstract updateItem(): UpdatableProduct
+  abstract updateItem(): void
 }
 
 class Standard extends UpdatableProduct {
   updateItem() {
-    return new Standard(this.name, this.sellIn - 1, this.quality - 1)
+    this.sellIn--
+    this.quality--
   }
 }
 
 class Brie extends UpdatableProduct {
   updateItem() {
-    return this
+
   }
 }
 
 class Pass extends UpdatableProduct {
   updateItem() {
-    return this
+
   }
 }
 
 class Sulfuras extends UpdatableProduct {
   updateItem() {
-    return this
+
   }
 }
 
@@ -73,7 +74,8 @@ export class GildedRose {
       if (isNeitherBrieNorPass) {
         if (item.quality > 0) {
           if (item.name != sulfurasName) {
-            item.quality = product.updateItem().quality
+            product.updateItem()
+            item.quality = product.quality
           }
         }
       } else {
