@@ -10,11 +10,9 @@ export class Item {
   }
 }
 
-abstract class UpdatableProduct {
-  private item: Item
-
-  constructor(item: Item) {
-    this.item = item
+abstract class UpdatableProduct extends Item {
+  constructor(name, sellIn, quality) {
+    super(name, sellIn, quality)
   }
 
   abstract updateItem(): UpdatableProduct
@@ -22,7 +20,7 @@ abstract class UpdatableProduct {
 
 class Standard extends UpdatableProduct {
   updateItem() {
-    return this
+    return new Standard(this.name, this.sellIn - 1, this.quality - 1)
   }
 }
 
@@ -44,16 +42,16 @@ class Sulfuras extends UpdatableProduct {
   }
 }
 
-const createUpdatableProduct = (item: Item): UpdatableProduct => {
-  switch (item.name) {
+const createUpdatableProduct = ({name, sellIn, quality}: Item): UpdatableProduct => {
+  switch (name) {
     case brieName:
-      return new Brie(item)
+      return new Brie(name, sellIn, quality)
     case passName:
-      return new Pass(item)
+      return new Pass(name, sellIn, quality)
     case sulfurasName:
-      return new Sulfuras(item)
+      return new Sulfuras(name, sellIn, quality)
     default:
-      return new Standard(item)
+      return new Standard(name, sellIn, quality)
   }
 };
 
@@ -75,7 +73,7 @@ export class GildedRose {
       if (isNeitherBrieNorPass) {
         if (item.quality > 0) {
           if (item.name != sulfurasName) {
-            item.quality = item.quality - 1
+            item.quality = product.updateItem().quality
           }
         }
       } else {
