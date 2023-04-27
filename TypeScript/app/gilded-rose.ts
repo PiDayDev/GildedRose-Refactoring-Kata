@@ -21,7 +21,13 @@ abstract class UpdatableProduct extends Item {
 class Standard extends UpdatableProduct {
   updateItem() {
     this.sellIn--
-    this.quality--
+    if (this.sellIn < 0) {
+      this.quality -= 2
+    } else {
+      this.quality -= 1
+    }
+    if (this.quality < 0)
+      this.quality = 0
   }
 }
 
@@ -100,13 +106,7 @@ export class GildedRose {
       }
       if (item.sellIn < 0) {
         if (item.name != brieName) {
-          if (item.name != passName) {
-            if (item.quality > 0) {
-              if (item.name != sulfurasName) {
-                item.quality = item.quality - 1
-              }
-            }
-          } else {
+          if (item.name == passName) {
             item.quality = item.quality - item.quality
           }
         } else {
