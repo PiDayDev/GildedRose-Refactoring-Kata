@@ -105,12 +105,10 @@ describe('Gilded Rose', () => {
       expected: new Item('Aged Brie', -11, 50)
     },
     {
-      // FIXME this sucks
       input: new Item('Aged Brie', 10, 66),
       expected: new Item('Aged Brie', 9, 66)
     },
     {
-      // FIXME this sucks
       input: new Item('Zola', 11, 123),
       expected: new Item('Zola', 10, 122)
     },
