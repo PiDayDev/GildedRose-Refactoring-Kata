@@ -10,6 +10,53 @@ export class Item {
   }
 }
 
+abstract class UpdatableProduct {
+  private item: Item
+
+  constructor(item: Item) {
+    this.item = item
+  }
+
+  abstract updateItem(): UpdatableProduct
+}
+
+class Standard extends UpdatableProduct {
+  updateItem() {
+    return this
+  }
+}
+
+class Brie extends UpdatableProduct {
+  updateItem() {
+    return this
+  }
+}
+
+class Pass extends UpdatableProduct {
+  updateItem() {
+    return this
+  }
+}
+
+class Sulfuras extends UpdatableProduct {
+  updateItem() {
+    return this
+  }
+}
+
+const createUpdatableProduct = (item: Item): UpdatableProduct => {
+  switch (item.name) {
+    case brieName:
+      return new Brie(item)
+    case passName:
+      return new Pass(item)
+    case sulfurasName:
+      return new Sulfuras(item)
+    default:
+      return new Standard(item)
+  }
+};
+
 const brieName = 'Aged Brie';
 const passName = 'Backstage passes to a TAFKAL80ETC concert';
 const sulfurasName = 'Sulfuras, Hand of Ragnaros';
@@ -23,7 +70,9 @@ export class GildedRose {
 
   updateQuality() {
     this.items.forEach(item => {
-      if (item.name != brieName && item.name != passName) {
+      const product = createUpdatableProduct(item)
+      const isNeitherBrieNorPass = !(product instanceof Brie || product instanceof Pass)
+      if (isNeitherBrieNorPass) {
         if (item.quality > 0) {
           if (item.name != sulfurasName) {
             item.quality = item.quality - 1
