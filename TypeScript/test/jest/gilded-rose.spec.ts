@@ -11,57 +11,36 @@ describe('Gilded Rose', () => {
     expect(items[0].name).toBe('foo');
   });
 
-  test.each([
-    {
-      input: new Item('Ram', 20, 42),
-      expected: new Item('Ram', 19, 41)
-    },
-    {
-      input: new Item('Ham', 3, 50),
-      expected: new Item('Ham', 2, 49)
-    },
-    {
-      input: new Item('Jam', 1, 7),
-      expected: new Item('Jam', 0, 6)
-    },
-    {
-      input: new Item('Spam', 1, 1),
-      expected: new Item('Spam', 0, 0)
-    },
-  ])('decreases sellIn and quality by 1 before expiration | $input',
-    ({input, expected}) => expectCorrectSingleUpdate(input, expected));
+  test.each`
+    itemName  | initialSellIn | initialValue | expectedFinalValue
+    ${'Ram'}  | ${20}         | ${42}        | ${41}
+    ${'Ham'}  | ${3}          | ${50}        | ${49}
+    ${'Jam'}  | ${1}          | ${7}         | ${6}
+    ${'Spam'} | ${1}          | ${1}         | ${0}
+  `(
+    'decreases sellIn and quality by 1 before expiration | $itemName @ $initialSellIn : $initialValue -> $expectedFinalValue',
+    expectOneTickToChangeValue
+  );
 
-  test.each([
-    {
-      input: new Item('Milk', -2, 42),
-      expected: new Item('Milk', -3, 40)
-    },
-    {
-      input: new Item('Milk', 0, 50),
-      expected: new Item('Milk', -1, 48)
-    },
-    {
-      input: new Item('Milk', -11, 2),
-      expected: new Item('Milk', -12, 0)
-    },
-  ])('decreases sellIn by 1 and quality by 2 after expiration | $input',
-    ({input, expected}) => expectCorrectSingleUpdate(input, expected));
+  test.each`
+    itemName  | initialSellIn | initialValue | expectedFinalValue
+    ${'Milk'} | ${-2}         | ${42}        | ${40}
+    ${'Milk'} | ${0}          | ${50}        | ${48}
+    ${'Milk'} | ${-11}        | ${2}         | ${0}
+  `(
+    'decreases sellIn by 1 and quality by 2 after expiration | $itemName @ $initialSellIn : $initialValue -> $expectedFinalValue',
+    expectOneTickToChangeValue
+  );
 
-  test.each([
-    {
-      input: new Item('Milk', -2, 0),
-      expected: new Item('Milk', -3, 0)
-    },
-    {
-      input: new Item('Milk', 10, 0),
-      expected: new Item('Milk', 9, 0)
-    },
-    {
-      input: new Item('Milk', -11, 1),
-      expected: new Item('Milk', -12, 0)
-    },
-  ])('The Quality of an item is never negative | $input',
-    ({input, expected}) => expectCorrectSingleUpdate(input, expected));
+ test.each`
+    itemName  | initialSellIn | initialValue | expectedFinalValue
+    ${'Beer'} | ${-2}         | ${0}         | ${0}
+    ${'Beer'} | ${10}         | ${0}         | ${0}
+    ${'Beer'} | ${-11}        | ${1}         | ${0}
+  `(
+    'The Quality of an item is never negative | $itemName @ $initialSellIn : $initialValue -> $expectedFinalValue',
+    expectOneTickToChangeValue
+  );
 
   test.each([
     {
@@ -152,6 +131,19 @@ describe('Gilded Rose', () => {
     ({input, expected}) => expectCorrectSingleUpdate(input, expected));
 
 });
+
+interface Interface {
+  itemName: string,
+  initialSellIn: number,
+  initialValue: number,
+  expectedFinalValue: number
+}
+
+function expectOneTickToChangeValue({itemName, initialSellIn, initialValue, expectedFinalValue}: Interface) {
+  const initial = new Item(itemName, initialSellIn, initialValue)
+  const expected = new Item(itemName, initialSellIn - 1, expectedFinalValue)
+  expectCorrectSingleUpdate(initial, expected)
+}
 
 function expectCorrectSingleUpdate(input: Item, expected: Item) {
   const gildedRose = new GildedRose([input]);
