@@ -1,5 +1,28 @@
 import {GildedRose, Item} from '@/gilded-rose';
 
+const testCaseFormat = '$itemName @ $initialSellIn : $initialValue -> $expectedFinalValue'
+
+interface TestCase {
+  itemName: string,
+  initialSellIn: number,
+  initialValue: number,
+  expectedFinalValue: number
+}
+
+function expectOneTickToChangeValue({itemName, initialSellIn, initialValue, expectedFinalValue}: TestCase) {
+  const initial = new Item(itemName, initialSellIn, initialValue)
+  const expected = new Item(itemName, initialSellIn - 1, expectedFinalValue)
+  expectCorrectSingleUpdate(initial, expected)
+}
+
+function expectCorrectSingleUpdate(input: Item, expected: Item) {
+  const gildedRose = new GildedRose([input]);
+
+  const [updatedItem] = gildedRose.updateQuality();
+
+  expect(updatedItem).toEqual(expected);
+}
+
 describe('Gilded Rose', () => {
   it('keeps item name', () => {
     const item = new Item('foo', 0, 0);
@@ -18,7 +41,7 @@ describe('Gilded Rose', () => {
     ${'Jam'}  | ${1}          | ${7}         | ${6}
     ${'Spam'} | ${1}          | ${1}         | ${0}
   `(
-    'decreases sellIn and quality by 1 before expiration | $itemName @ $initialSellIn : $initialValue -> $expectedFinalValue',
+    `${testCaseFormat} | decreases sellIn and quality by 1 before expiration`,
     expectOneTickToChangeValue
   );
 
@@ -28,71 +51,62 @@ describe('Gilded Rose', () => {
     ${'Milk'} | ${0}          | ${50}        | ${48}
     ${'Milk'} | ${-11}        | ${2}         | ${0}
   `(
-    'decreases sellIn by 1 and quality by 2 after expiration | $itemName @ $initialSellIn : $initialValue -> $expectedFinalValue',
+    `${testCaseFormat} | decreases sellIn by 1 and quality by 2 after expiration`,
     expectOneTickToChangeValue
   );
 
- test.each`
+  test.each`
     itemName  | initialSellIn | initialValue | expectedFinalValue
     ${'Beer'} | ${-2}         | ${0}         | ${0}
     ${'Beer'} | ${10}         | ${0}         | ${0}
     ${'Beer'} | ${-11}        | ${1}         | ${0}
   `(
-    'The Quality of an item is never negative | $itemName @ $initialSellIn : $initialValue -> $expectedFinalValue',
+    `${testCaseFormat} | The Quality of an item is never negative`,
     expectOneTickToChangeValue
   );
 
-  test.each([
-    {
-      input: new Item('Aged Brie', 10, 10),
-      expected: new Item('Aged Brie', 9, 11)
-    },
-    {
-      input: new Item('Aged Brie', -11, 10),
-      expected: new Item('Aged Brie', -12, 12)
-    },
-  ])('"Aged Brie" actually increases in Quality the older it gets | $input',
-    ({input, expected}) => expectCorrectSingleUpdate(input, expected));
+  test.each`
+    itemName       | initialSellIn | initialValue  | expectedFinalValue
+    ${'Aged Brie'} | ${10}         | ${10}         | ${11}
+    ${'Aged Brie'} | ${-11}        | ${10}         | ${12}
+  `(
+    `${testCaseFormat} | "Aged Brie" increases in Quality the older it gets`,
+    expectOneTickToChangeValue
+  );
 
-  test.each([
-    {
-      input: new Item('Backstage passes to a TAFKAL80ETC concert', 10, 10),
-      expected: new Item('Backstage passes to a TAFKAL80ETC concert', 9, 12)
-    },
-    {
-      input: new Item('Backstage passes to a TAFKAL80ETC concert', 4, 10),
-      expected: new Item('Backstage passes to a TAFKAL80ETC concert', 3, 13)
-    },
-    {
-      input: new Item('Backstage passes to a TAFKAL80ETC concert', 1, 10),
-      expected: new Item('Backstage passes to a TAFKAL80ETC concert', 0, 13)
-    },
-    {
-      input: new Item('Backstage passes to a TAFKAL80ETC concert', 0, 10),
-      expected: new Item('Backstage passes to a TAFKAL80ETC concert', -1, 0)
-    },
-  ])('Backstage passes to a TAFKAL80ETC concert: quality +2 <=10 days; +3 <= 5 days; 0 after | $input',
-    ({input, expected}) => expectCorrectSingleUpdate(input, expected));
+  test.each`
+    itemName                                       | initialSellIn | initialValue  | expectedFinalValue
+    ${'Backstage passes to a TAFKAL80ETC concert'} | ${10}         | ${10}         | ${12}
+    ${'Backstage passes to a TAFKAL80ETC concert'} | ${ 4}         | ${10}         | ${13}
+    ${'Backstage passes to a TAFKAL80ETC concert'} | ${ 1}         | ${10}         | ${13}
+    ${'Backstage passes to a TAFKAL80ETC concert'} | ${ 0}         | ${10}         | ${0}
+  `(
+    `${testCaseFormat} | Passes: quality +2 <=10 days; +3 <= 5 days; 0 after`,
+    expectOneTickToChangeValue
+  );
 
-  test.each([
-    {
-      input: new Item('Aged Brie', 10, 50),
-      expected: new Item('Aged Brie', 9, 50)
-    },
-    {
-      input: new Item('Aged Brie', -10, 49),
-      expected: new Item('Aged Brie', -11, 50)
-    },
-    {
-      input: new Item('Aged Brie', 10, 66),
-      expected: new Item('Aged Brie', 9, 66)
-    },
-    {
-      input: new Item('Zola', 11, 123),
-      expected: new Item('Zola', 10, 122)
-    },
-  ])('The Quality of an item is never more than 50 | $input',
-    ({input, expected}) => expectCorrectSingleUpdate(input, expected));
+  test.each`
+    itemName       | initialSellIn | initialValue   | expectedFinalValue
+    ${'Aged Brie'} | ${10}         | ${50}          | ${50}
+    ${'Aged Brie'} | ${-7}         | ${49}          | ${50}
+    ${'Aged Brie'} | ${10}         | ${666}         | ${666} | (WTF?)
+    ${'Zola'}      | ${11}         | ${123}         | ${122} | (WTF?)
+  `(
+    `${testCaseFormat} | Quality of an item is never more than 50`,
+    expectOneTickToChangeValue
+  );
+
+                                                                                                                                                                                                            test.each`
+    itemName              | initialSellIn | initialValue | expectedFinalValue
+    ${'Sulfuras'}         | ${10}         | ${80}        | ${79}
+    ${'Sulfuras'}         | ${-6}         | ${80}        | ${78}
+    ${'Backstage passes'} | ${15}         | ${12}        | ${11}
+    ${'Backstage passes'} | ${15}         | ${80}        | ${79}
+    ${'Backstage passes'} | ${-9}         | ${6}         | ${4}
+  `(
+    `${testCaseFormat} | misnamed items are normal items`,
+    expectOneTickToChangeValue
+  );
 
   test.each([
     {
@@ -106,49 +120,6 @@ describe('Gilded Rose', () => {
   ])('"Sulfuras, Hand of Ragnaros", being a legendary item, never has to be sold; its Quality is 80 and it never alters | $input',
     ({input, expected}) => expectCorrectSingleUpdate(input, expected));
 
-  test.each([
-    {
-      input: new Item('Sulfuras', 10, 80),
-      expected: new Item('Sulfuras', 9, 79)
-    },
-    {
-      input: new Item('Sulfuras', -10, 80),
-      expected: new Item('Sulfuras', -11, 78)
-    },
-    {
-      input: new Item('Backstage passes', 5, 12),
-      expected: new Item('Backstage passes', 4, 11)
-    },
-    {
-      input: new Item('Backstage passes', 9, 80),
-      expected: new Item('Backstage passes', 8, 79)
-    },
-    {
-      input: new Item('Backstage passes', -9, 6),
-      expected: new Item('Backstage passes', -10, 4)
-    },
-  ])('misnamed items are normal items | $input',
-    ({input, expected}) => expectCorrectSingleUpdate(input, expected));
 
 });
 
-interface Interface {
-  itemName: string,
-  initialSellIn: number,
-  initialValue: number,
-  expectedFinalValue: number
-}
-
-function expectOneTickToChangeValue({itemName, initialSellIn, initialValue, expectedFinalValue}: Interface) {
-  const initial = new Item(itemName, initialSellIn, initialValue)
-  const expected = new Item(itemName, initialSellIn - 1, expectedFinalValue)
-  expectCorrectSingleUpdate(initial, expected)
-}
-
-function expectCorrectSingleUpdate(input: Item, expected: Item) {
-  const gildedRose = new GildedRose([input]);
-
-  const [updatedItem] = gildedRose.updateQuality();
-
-  expect(updatedItem).toEqual(expected);
-}
